@@ -1,0 +1,36 @@
+---
+- hosts: arista
+
+  tasks:
+    - name: create finance vlan
+      eos_vlan:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        vlanid: 2
+        name: finance
+        state: present
+
+    - name: create development vlan
+      eos_vlan:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        vlanid: 3
+        name: development
+        state: present
+
+    - name: create frontend vlan
+      eos_vlan:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        vlanid: 4
+        name: frontend
+        state: present
