@@ -9,6 +9,31 @@
         name: development
       - vlanid: 4
         name: frontend
+    interfaces:
+      - name: Ethernet2
+        description: ac_vlan2_gw
+        switchport_mode: access
+        pvid: 2
+      - name: Ethernet3
+        description: ac_vlan3_gw
+        switchport_mode: access
+        pvid: 3
+      - name: Ethernet4
+        description: ac_vlan4_gw
+        switchport_mode: access
+        pvid: 4
+      - name: Ethernet5
+        description: tr_vlan2_gw
+        switchport_mode: trunk
+        trunk_allowed_vlans: 2,3,4
+        pvid: 2
+      - name: Port-Channel1
+        description: lag_lacp_po1
+        members: Ethernet6,Ethernet7
+        lacp_mode: active
+        switchport_mode: trunk
+        trunk_allowed_vlans: 2,3,4
+        pvid: 2
 
   tasks:
     - name: create vlans
@@ -22,3 +47,63 @@
         name: "{{ item.name }}"
         state: present
       with_items: "{{ vlans }}"
+
+    - name: set interface descriptions
+      eos_interface:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+      with_items: "{{ interfaces }}"
+      tags:
+        - interfaces
+
+    - name: set interface access switchports
+      eos_switchport:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        name: "{{ item.name }}"
+        mode: "{{ item.switchport_mode }}"
+        access_vlan: "{{ item.pvid }}"
+      with_items: "{{ interfaces }}"
+      when: item.switchport_mode == "access"
+      tags:
+        - interfaces
+
+    - name: set interface trunk switchports
+      eos_switchport:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        name: "{{ item.name }}"
+        mode: "{{ item.switchport_mode }}"
+        trunk_native_vlan: "{{ item.pvid }}"
+        trunk_allowed_vlans: "{{ item.trunk_allowed_vlans }}"
+      with_items: "{{ interfaces }}"
+      when: item.switchport_mode == "trunk"
+      tags:
+        - interfaces
+
+    - name: set port-channels
+      eos_portchannel:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        members: "{{ item.members }}"
+        lacp_mode: "{{ item.lacp_mode }}"
+      with_items: "{{ interfaces }}"
+      when: item.lacp_mode is defined
+      tags:
+        - interfaces
