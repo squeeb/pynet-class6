@@ -1,5 +1,6 @@
 ---
-- hosts: arista
+- name: main config
+  hosts: arista
 
   vars:
     vlans:
@@ -36,6 +37,17 @@
         pvid: 2
 
   tasks:
+    - name: collect all facts from node
+      eos_facts:
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+      tags:
+        - facts
+      register: facts
+
     - name: create vlans
       eos_vlan:
         username: "{{ eapi_username }}"
@@ -107,3 +119,22 @@
       when: item.lacp_mode is defined
       tags:
         - interfaces
+
+    - name: save configuration
+      eos_command:
+        commands: "write memory"
+        username: "{{ eapi_username }}"
+        password: "{{ eapi_password }}"
+        host:     "{{ eapi_hostname }}"
+        transport: https
+        port:     "{{ eapi_port }}"
+      register: cmd_out
+      tags:
+        - save
+
+    - debug: var=cmd_out
+      tags:
+        - save
+    - debug: var=facts
+      tags:
+        - facts
